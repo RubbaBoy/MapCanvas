@@ -19,6 +19,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.stream.Collectors;
 
 public class VideoPlayer extends JavaPlugin implements Listener {
@@ -27,6 +29,8 @@ public class VideoPlayer extends JavaPlugin implements Listener {
     private int index = 0;
     private List<List<Integer>> mapIDs = new ArrayList<>();
     private List<MapFrame> mapFrames = new ArrayList<>();
+    private AtomicReferenceArray<String> files;
+    private AtomicInteger finished = new AtomicInteger();
 
     @Override
     public void onEnable() {
@@ -51,38 +55,83 @@ public class VideoPlayer extends JavaPlugin implements Listener {
             mapIDs.add(row);
         }
 
-        final long start = System.currentTimeMillis();
 
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            final long start = System.currentTimeMillis();
 
-        new Thread(() -> {
             File framesDir = new File(getDataFolder(), "frames");
 
-            List<String> fileNames = Arrays.stream(framesDir.listFiles()).map(File::getName).filter(name -> name.endsWith(".png")).sorted(new Comparator<String>() {
-                public int compare(String o1, String o2) {
-                    return extractInt(o1) - extractInt(o2);
-                }
+            List<String> fileNames = Arrays.stream(framesDir.listFiles()).map(File::getName).filter(name -> name.endsWith(".png"))
+//                    .sorted(new Comparator<String>() {
+//                public int compare(String o1, String o2) {
+//                    return extractInt(o1) - extractInt(o2);
+//                }
+//
+//                int extractInt(String s) {
+//                    String num = s.replaceAll("\\D", "");
+//                    return num.isEmpty() ? 0 : Integer.parseInt(num);
+//                }
+//            })
+                    .collect(Collectors.toList());
 
-                int extractInt(String s) {
-                    String num = s.replaceAll("\\D", "");
-                    return num.isEmpty() ? 0 : Integer.parseInt(num);
-                }
-            }).collect(Collectors.toList());
+            this.files = new AtomicReferenceArray<>(fileNames.size());
 
-            fileNames.forEach(name -> {
-                System.out.println("name = " + name);
-                try {
-                    BufferedImage frameImage = ImageIO.read(new File(getDataFolder(), "frames\\" + name));
-                    MapFrame mapFrame = new MapFrame(this, frameImage.getWidth(), frameImage.getHeight());
-                    mapFrame.register(frameImage);
+            for (int i = 0; i < fileNames.size(); i++) {
+                this.files.set(i, fileNames.get(i));
+            }
 
-                    this.mapFrames.add(mapFrame);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
+            for (int i = 0; i < fileNames.size() + 10; i++) {
+                this.mapFrames.add(null);
+            }
 
-            System.out.println("Completed in " + (System.currentTimeMillis() - start) + "ms");
-        }).start();
+            int numberOfProcessingThreads = 50;
+
+
+//            Bukkit.getPlayer("RubbaBoy").sendMessage("Started");
+            for (int i = 0; i < numberOfProcessingThreads; i++) {
+                new Thread(() -> {
+                    while (true) {
+                        String name = null;
+                        for (int i2 = 0; i2 < this.files.length(); i2++) {
+                            name = this.files.getAndSet(i2, null);
+                            if (name != null) break;
+                        }
+
+                        if (name == null) break;
+
+                        int number = Integer.valueOf(name.replaceAll("\\D", ""));
+
+                        System.out.println("name = " + name + "\t#" + number);
+
+                        try {
+                            BufferedImage frameImage = ImageIO.read(new File(getDataFolder(), "frames\\" + name));
+                            MapFrame mapFrame = new MapFrame(this, frameImage.getWidth(), frameImage.getHeight());
+                            mapFrame.register(frameImage);
+
+                            this.mapFrames.set(number, mapFrame);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    finished.addAndGet(1);
+                }).start();
+            }
+
+            new Thread(() -> {
+                while (this.finished.get() < numberOfProcessingThreads);
+
+                System.out.println("Completed in " + (System.currentTimeMillis() - start) + "ms");
+            }).start();
+
+//            Bukkit.getPlayer("RubbaBoy").sendMessage("Finished making threads");
+
+
+        }, 60L);
+
+//        new Thread(() -> {
+
+//        }).start();
 
 
         /*
@@ -139,6 +188,12 @@ public class VideoPlayer extends JavaPlugin implements Listener {
                 }
 
                 MapFrame mapFrame = this.mapFrames.get(currentFrame);
+
+                while (mapFrame == null) {
+                    currentFrame++;
+                    mapFrame = this.mapFrames.get(currentFrame);
+                }
+
                 currentFrame++;
 
                 CraftPlayer craftPlayer = (CraftPlayer) player;
@@ -147,9 +202,10 @@ public class VideoPlayer extends JavaPlugin implements Listener {
 
                 mapIndex = 0;
 
+                MapFrame finalMapFrame = mapFrame;
                 this.mapIDs.stream().flatMap(List::stream).forEach(id -> {
 //                    System.out.println("mapIndex = " + mapIndex);
-                    PacketPlayOutMap packet = new PacketPlayOutMap(id, (byte) 4, false, new ArrayList<>(), mapFrame.getForMap(mapIndex), 0, 0, 128, 128);
+                    PacketPlayOutMap packet = new PacketPlayOutMap(id, (byte) 4, false, new ArrayList<>(), finalMapFrame.getForMap(mapIndex), 0, 0, 128, 128);
 //                    PacketPlayOutMap packet = new PacketPlayOutMap(id, (byte) 4, false, new ArrayList<>(), colors, 0, 0, 128, 128);
                     craftPlayer.getHandle().playerConnection.sendPacket(packet);
                     mapIndex++;
