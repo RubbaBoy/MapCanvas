@@ -1,0 +1,4 @@
+main: com.uddernetworks.videoplayer.main.VideoPlayer
+name: VideoPlayer
+version: 1.0
+author: RubbaBoy
