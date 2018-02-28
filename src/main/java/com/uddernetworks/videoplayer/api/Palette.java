@@ -66,8 +66,12 @@ public final class Palette {
         return this.colors;
     }
 
-    public int getColorById(int id) {
+    public byte getColorById(int id) {
         return this.colors.stream().filter(color -> color.getId() == id).findFirst().orElse(this.colors.get(7)).getId();
+    }
+
+    public Color getJavaColorById(int id) {
+        return new Color(this.colors.stream().filter(color -> color.getId() == id).findFirst().orElse(this.colors.get(7)).asInt());
     }
 
     public byte findClosestPaletteColorTo(int color) {

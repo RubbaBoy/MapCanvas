@@ -1,14 +1,20 @@
 package com.uddernetworks.videoplayer.api;
 
 import com.uddernetworks.videoplayer.api.MapObject;
+import com.uddernetworks.videoplayer.main.VideoPlayer;
 import net.minecraft.server.v1_12_R1.PacketPlayOutMap;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_12_R1.map.CraftMapCanvas;
 import org.bukkit.entity.Player;
 import org.bukkit.map.MapPalette;
+import org.bukkit.map.MapRenderer;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -16,30 +22,35 @@ import java.util.stream.Collectors;
 
 public class MapCanvas {
 
+    private VideoPlayer videoPlayer;
     private int width;
     private int height;
     private List<Integer> mapIDs;
     private List<MapObject> mapObjects;
     private List<UUID> viewers;
     private int repaintInterval = 500; // In MS
-    private byte[] pixels;
+    public byte[] pixels;
+    private Palette palette;
 
-    public MapCanvas(int width, int height, List<Integer> mapIDs, List<UUID> viewers) {
-        this(width, height, mapIDs);
-        this.viewers = viewers;
-    }
+//    public MapCanvas(int width, int height, List<Integer> mapIDs, List<UUID> viewers) {
+//        this(width, height, mapIDs);
+//        this.viewers = viewers;
+//    }
 
-    public MapCanvas(int width, int height, List<Integer> mapIDs) {
+    public MapCanvas(VideoPlayer videoPlayer, int width, int height, List<Integer> mapIDs) {
+        this.videoPlayer = videoPlayer;
         this.width = width;
         this.height = height;
         this.mapIDs = mapIDs;
         this.mapObjects = new ArrayList<>();
         this.viewers = null;
         this.pixels = new byte[width * height * 128 * 128];
+        this.palette = new Palette();
     }
 
     public void addObject(MapObject mapObject) {
 //        mapObject.initialize(this);
+//        this.mapObjects.clear();
         this.mapObjects.add(mapObject);
     }
 
@@ -50,13 +61,16 @@ public class MapCanvas {
     public void paint() throws InterruptedException {
         this.pixels = new byte[width * height * 128 * 128];
 
-        clear();
+//        clear();
 
-        Thread.sleep(3000);
+//        Thread.sleep(500);
 
-        Arrays.fill(this.pixels, (byte) ThreadLocalRandom.current().nextInt(50));
+//        Arrays.fill(this.pixels, (byte) ThreadLocalRandom.current().nextInt(50));
+        Arrays.fill(this.pixels, MapPalette.matchColor(Color.WHITE));
 
         mapObjects.forEach(mapObject -> mapObject.draw(this));
+
+//        visualizeBytes(pixels, width * 128, height * 128, "main_stuff");
 
         int mapID = 0;
 
@@ -65,17 +79,10 @@ public class MapCanvas {
 
 //                System.out.println("(" + imageX + ", " + imageY + ")");
 
-                int green = MapPalette.matchColor(Color.GREEN);
-
-                int greenPixels = 0;
-
-                for (byte pixel : pixels) {
-                    if (pixel == green) greenPixels++;
-                }
-
-                System.out.println("Green pixels = " + greenPixels);
-
                 byte[] colors = getSubImage(pixels, imageX, imageY);
+
+                visualizeBytes(colors, 128, 128, "Section_" + imageX + "_" + imageY);
+
 //                byte[] colors = getSubImage(pixels, imageX * 128, imageY * 128);
 
                 PacketPlayOutMap packet = new PacketPlayOutMap(mapIDs.get(mapID), (byte) 4, false, new ArrayList<>(), colors, 0, 0, 128, 128);
@@ -87,8 +94,6 @@ public class MapCanvas {
                 mapID++;
             }
         }
-
-//        System.out.println("MAX X IS: " + this.x);
     }
 
     private byte[] getSubImage(byte[] image, int xPos, int yPos) {
@@ -124,7 +129,44 @@ public class MapCanvas {
         return sub;
     }
 
-    public static byte[] getSquare(byte[] array, int xQuadrant, int yQuadrant, int sectionSize) {
+
+    public void visualizeBytes(byte[] bytes, int width, int height, String name) {
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                image.setRGB(x, y, this.palette.getJavaColorById(bytes[y * height + x]).getRGB());
+            }
+        }
+
+        try {
+            ImageIO.write(image, "png", new File(this.videoPlayer.getDataFolder(), "\\temp\\" + name + ".png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public byte[] getSquare(byte[] array, int xQuadrant, int yQuadrant, int sectionSize) {
+        byte[] sub = new byte[sectionSize * sectionSize];
+
+        int startX = xQuadrant * sectionSize;
+        int startY = yQuadrant * sectionSize;
+
+//        int rowLength = (int) Math.sqrt(array.length);
+
+        int rowLength = this.width * 128;
+
+        for (int y = 0; y < sectionSize; y++) {
+            System.arraycopy(array, startX + ((startY + y) * rowLength), sub, y * sectionSize, sectionSize);
+        }
+
+        return sub;
+    }
+
+
+    // This only works if it's a square of squares
+    public static byte[] getSquareOfSquare(byte[] array, int xQuadrant, int yQuadrant, int sectionSize) {
         byte[] sub = new byte[sectionSize * sectionSize];
 
         int startX = xQuadrant * sectionSize;
@@ -141,11 +183,20 @@ public class MapCanvas {
 
 
     public byte getPixel(int x, int y) {
-        return this.pixels[y * (128 * this.height) + x];
+        return this.pixels[y * (128 * this.width - 1) + x];
     }
 
     public void setPixel(int x, int y, byte pixel) {
-        this.pixels[y * 128 + x] = pixel;
+//        int tempY = y;
+//        y = 127 - x;
+//        x = tempY;
+//        System.out.println("x = [" + x + "], y = [" + y + "], pixel = [" + pixel + "]");
+        if (y >= this.height * 128 || y < 0
+                || x >= this.width * 128 || x < 0) {
+            return;
+        }
+
+        this.pixels[(y * 128 * this.width) + x] = pixel;
     }
 
     private byte[] rotateCube270(byte[] bytes, int width, int height) {
@@ -153,7 +204,7 @@ public class MapCanvas {
 //        BufferedImage dest = new BufferedImage(h, w, src.getType());
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                setPixelFrom(ret, getPixelFrom(bytes, width, x, y), width, y, x);
+                setPixelFrom(ret, getPixelFrom(bytes, width, x, y), width, y, width - 1 - x);
             }
         }
 

@@ -12,11 +12,13 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.server.MapInitializeEvent;
+import org.bukkit.map.MapPalette;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class VideoPlayer extends JavaPlugin implements Listener {
 
@@ -34,6 +36,8 @@ public class VideoPlayer extends JavaPlugin implements Listener {
     private long start = -1;
     private int amount = 1;
 
+    public static int REMOVE = 0;
+
     @EventHandler
     public void onChatEvent(AsyncPlayerChatEvent event) throws InterruptedException {
         if (event.getMessage().toLowerCase().startsWith("start")) {
@@ -42,13 +46,15 @@ public class VideoPlayer extends JavaPlugin implements Listener {
 
             event.getPlayer().sendMessage(ChatColor.GOLD + "Starting with " + after + "...");
 
+            this.REMOVE = after;
+
             List<Integer> mapIDs = new ArrayList<>();
 
             for (int i = 0; i < 12; i++) {
                 mapIDs.add(113 + i);
             }
 
-            MapCanvas mapCanvas = new MapCanvas(4, 3, mapIDs);
+            MapCanvas mapCanvas = new MapCanvas(this, 4, 3, mapIDs);
 
 //            mapCanvas.addObject(new Square(0, 0, 64, 64, palette.findClosestPaletteColorTo(Color.RED)));
 //            mapCanvas.addObject(new Square(64, 0, 64, 64, palette.findClosestPaletteColorTo(Color.GREEN)));
@@ -57,7 +63,16 @@ public class VideoPlayer extends JavaPlugin implements Listener {
 //            mapCanvas.addObject(new Square(64, 64, 64, 64, palette.findClosestPaletteColorTo(Color.YELLOW)));
 
 
-            mapCanvas.addObject(new Square(64, (int) (128 * 1.5) + after, 128, 128, palette.findClosestPaletteColorTo(Color.GREEN)));
+//            mapCanvas.addObject(new Square(128 / 2, 128 / 2, 128 * 3, 128 * 2, MapPalette.matchColor(Color.GREEN)));
+
+            for (int i = 0; i < 10; i++) {
+                mapCanvas.addObject(new Square(
+                        ThreadLocalRandom.current().nextInt(512), // x
+                        ThreadLocalRandom.current().nextInt(384), // y
+                        ThreadLocalRandom.current().nextInt(512 / 3), // width
+                        ThreadLocalRandom.current().nextInt(512 / 3), // height
+                        palette.getColorById(ThreadLocalRandom.current().nextInt(50)))); // color
+            }
 
 
 //            mapCanvas.addObject(new Square(64, 64, 128 * 3, 128 * 2, palette.findClosestPaletteColorTo(Color.RED)));
