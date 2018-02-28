@@ -51,6 +51,7 @@ public class MapCanvas {
 
         mapIDs.forEach(mapID -> {
             MapView mapView = Bukkit.getServer().getMap(mapID.shortValue());
+            if (mapView == null) System.out.println("MAP VIEW NULL");
             List<MapRenderer> removing = new ArrayList<>(mapView.getRenderers());
             removing.forEach(mapView::removeRenderer);
         });
@@ -69,33 +70,30 @@ public class MapCanvas {
             System.out.println("Initializing " + mapObject);
             mapObject.initialize(this);
         });
+
+//        this.mapIDs.forEach(mapID -> {
+//            MapView mapView = Bukkit.getServer().getMap(mapID.shortValue());
+//        });
     }
 
     public void paint() {
         this.pixels = new byte[width * height * 128 * 128];
 
-//        Thread.sleep(500);
-
         Arrays.fill(this.pixels, MapPalette.matchColor(Color.WHITE));
-//        Arrays.fill(this.pixels, MapPalette.matchColor(Color.WHITE));
-//        Arrays.fill(this.pixels, (byte) ThreadLocalRandom.current().nextInt(50));
-
-//        randomize(this.pixels);
 
         mapObjects.forEach(mapObject -> {
             System.out.println("Rendering " + mapObject);
             mapObject.draw(this);
         });
 
-//        visualizeBytes(pixels, width * 128, height * 128, "main_stuff");
+        updateMaps();
+    }
 
+    public void updateMaps() {
         int mapID = 0;
 
         for (int imageY = 0; imageY < height; imageY++) {
             for (int imageX = 0; imageX < width; imageX++) {
-
-                System.out.println("(" + imageX + ", " + imageY + ")");
-
                 byte[] colors = getSubImage(pixels, imageX, imageY);
 
                 for (int i = 0; i < colors.length; i++) {
@@ -205,5 +203,9 @@ public class MapCanvas {
 
     public int getRepaintInterval() {
         return repaintInterval;
+    }
+
+    public VideoPlayer getVideoPlayer() {
+        return videoPlayer;
     }
 }

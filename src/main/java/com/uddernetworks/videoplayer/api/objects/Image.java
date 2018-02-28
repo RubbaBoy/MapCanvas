@@ -9,14 +9,19 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Image implements MapObject {
 
-    private BufferedImage bufferedImage;
+    private MapCanvas mapCanvas;
+    private AtomicReference<BufferedImage> bufferedImage = new AtomicReference<>();
     private int x;
     private int y;
     private int width;
     private int height;
+    private AtomicBoolean imageLoaded = new AtomicBoolean(false);
+    private AtomicBoolean tryingToDraw = new AtomicBoolean(false);
 
     public Image(URL url, int x, int y, int width, int height) {
         this.x = x;
@@ -24,11 +29,22 @@ public class Image implements MapObject {
         this.width = width;
         this.height = height;
 
-        try {
-            this.bufferedImage = resizeImage(ImageIO.read(url), width, height);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
+        new Thread(() -> {
+            try {
+                System.out.println("GEtting image");
+                this.bufferedImage.set(resizeImage(ImageIO.read(url), width, height));
+                System.out.println("Donbe");
+                this.imageLoaded.set(true);
+
+                if (this.tryingToDraw.get()) {
+                    this.draw(mapCanvas);
+                    mapCanvas.updateMaps();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     @Override
@@ -39,12 +55,23 @@ public class Image implements MapObject {
 
     @Override
     public void draw(MapCanvas mapCanvas) {
+        System.out.println("Drawing");
+        this.mapCanvas = mapCanvas;
+        if (!this.imageLoaded.get()) {
+            tryingToDraw.set(true);
+            return;
+        }
+
+        System.out.println("Drawing");
+
+        BufferedImage image = this.bufferedImage.get();
+
         for (int y = 0; y < this.height; y++) {
             for (int x = 0; x < this.width; x++) {
                 int imageX = x + this.x;
                 int imageY = y + this.y;
 
-                Color imageColor = new Color(this.bufferedImage.getRGB(x, y), true);
+                Color imageColor = new Color(image.getRGB(x, y), true);
 
                 if (imageColor.getAlpha() == 255) {
                     mapCanvas.setPixel(imageX, imageY, MapPalette.matchColor(imageColor));
@@ -93,5 +120,9 @@ public class Image implements MapObject {
 
     public void setHeight(int height) {
         this.height = height;
+    }
+
+    public boolean imageLoaded() {
+        return this.imageLoaded.get();
     }
 }
