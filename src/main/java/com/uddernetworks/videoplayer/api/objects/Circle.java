@@ -5,10 +5,10 @@ import com.uddernetworks.videoplayer.api.MapObject;
 
 public class Circle implements MapObject {
 
-    private final int x;
-    private final int y;
-    private final int innerRadius;
-    private final int outerRadius;
+    private int x;
+    private int y;
+    private int innerRadius;
+    private int outerRadius;
     private byte fillColor;
 
     public Circle(int x, int y, int radius, byte fillColor) {
@@ -21,6 +21,12 @@ public class Circle implements MapObject {
         this.innerRadius = innerRadius;
         this.outerRadius = outerRadius;
         this.fillColor = fillColor;
+    }
+
+    @Override
+    public void initialize(MapCanvas mapCanvas) {
+        this.x = mapCanvas.migrateX(this.x);
+        this.y = mapCanvas.migrateY(this.y);
     }
 
     @Override

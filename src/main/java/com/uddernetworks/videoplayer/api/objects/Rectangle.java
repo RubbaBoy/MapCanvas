@@ -27,6 +27,12 @@ public class Rectangle implements MapObject {
     }
 
     @Override
+    public void initialize(MapCanvas mapCanvas) {
+        this.x = mapCanvas.migrateX(this.x);
+        this.y = mapCanvas.migrateY(this.y);
+    }
+
+    @Override
     public void draw(MapCanvas mapCanvas) {
         for (int y = 0; y < this.height; y++) {
             for (int x = 0; x < this.width; x++) {

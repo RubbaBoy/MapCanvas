@@ -39,13 +39,13 @@ public class MapCanvas {
 //        this.viewers = viewers;
 //    }
 
-    public MapCanvas(VideoPlayer videoPlayer, int width, int height, List<Integer> mapIDs, List<UUID> viewers) {
+    public MapCanvas(VideoPlayer videoPlayer, int width, int height, List<Integer> mapIDs) {
         this.videoPlayer = videoPlayer;
         this.width = width;
         this.height = height;
         this.mapIDs = mapIDs;
         this.mapObjects = new ArrayList<>();
-        this.viewers = viewers;
+//        this.viewers = viewers;
         this.pixels = new byte[width * height * 128 * 128];
         this.palette = new Palette();
 
@@ -62,6 +62,13 @@ public class MapCanvas {
 
     public void setRepaintInterval(int repaintInterval) {
         this.repaintInterval = repaintInterval;
+    }
+
+    public void initialize() {
+        mapObjects.forEach(mapObject -> {
+            System.out.println("Initializing " + mapObject);
+            mapObject.initialize(this);
+        });
     }
 
     public void paint() {
@@ -146,6 +153,14 @@ public class MapCanvas {
         }
 
         return sub;
+    }
+
+    public int migrateX(int x) {
+        return x;
+    }
+
+    public int migrateY(int y) {
+        return (this.height * 128) - 1 - y;
     }
 
     public byte getPixel(int x, int y) {

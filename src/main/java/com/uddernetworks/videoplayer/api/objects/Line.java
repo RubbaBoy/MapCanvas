@@ -8,11 +8,11 @@ import java.util.List;
 
 public class Line implements MapObject {
 
-    private final int x1;
-    private final int y1;
-    private final int x2;
-    private final int y2;
-    private final byte lineColor;
+    private int x1;
+    private int y1;
+    private int x2;
+    private int y2;
+    private byte lineColor;
 
     public Line(int x1, int y1, int x2, int y2, byte lineColor) {
         this.x1 = x1;
@@ -20,6 +20,15 @@ public class Line implements MapObject {
         this.x2 = x2;
         this.y2 = y2;
         this.lineColor = lineColor;
+    }
+
+    @Override
+    public void initialize(MapCanvas mapCanvas) {
+        this.x1 = mapCanvas.migrateX(this.x1);
+        this.y1 = mapCanvas.migrateY(this.y1);
+
+        this.x2 = mapCanvas.migrateX(this.x2);
+        this.y2 = mapCanvas.migrateY(this.y2);
     }
 
     @Override
