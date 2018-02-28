@@ -1,4 +1,4 @@
-package com.uddernetworks.videoplayer.main;
+package com.uddernetworks.videoplayer.api;
 
 import org.bukkit.map.MapPalette;
 
@@ -71,53 +71,10 @@ public final class Palette {
     }
 
     public byte findClosestPaletteColorTo(int color) {
-//        int closestColor = Color.WHITE.getRGB();
-//        int closestDistance = Integer.MAX_VALUE;
-//        for (PaletteColor paletteColor : this.colors) {
-//            int distance = paletteColor.distanceTo(color);
-//            if (distance < closestDistance) {
-//                closestDistance = distance;
-//                closestColor = paletteColor.asInt();
-//            }
-//        }
-
         return MapPalette.matchColor(new Color(color));
-
-//        return (byte) closestColor;
     }
 
-    public static final class PaletteColor {
-        private final byte id;
-        private final int r;
-        private final int g;
-        private final int b;
-        private final int color;
-
-        public PaletteColor(int id, int r, int g, int b) {
-            this.id = (byte) id;
-            this.r = r;
-            this.g = g;
-            this.b = b;
-
-            this.color = ((0xFF) << 24) |
-                    ((r & 0xFF) << 16) |
-                    ((g & 0xFF) << 8) |
-                    ((b & 0xFF) << 0);
-        }
-
-        public int distanceTo(final int color) {
-            final int deltaR = this.r - ((color & 0xff000000) >>> 24);
-            final int deltaG = this.g - ((color & 0x00ff0000) >>> 16);
-            final int deltaB = this.b - ((color & 0x0000ff00) >>> 8);
-            return (deltaR * deltaR) + (deltaG * deltaG) + (deltaB * deltaB);
-        }
-
-        public int asInt() {
-            return this.color;
-        }
-
-        public byte getId() {
-            return this.id;
-        }
+    public byte findClosestPaletteColorTo(Color color) {
+        return MapPalette.matchColor(color);
     }
 }
