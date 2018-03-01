@@ -35,6 +35,7 @@ public class MapCanvas {
     private List<MapObject> mapObjects;
     private List<UUID> viewers;
     private int repaintInterval = 500; // In MS
+    private List<byte[]> cachedSections = new ArrayList<>();
     public byte[] pixels;
     private Palette palette;
 
@@ -52,6 +53,10 @@ public class MapCanvas {
 //        this.viewers = viewers;
         this.pixels = new byte[width * height * 128 * 128];
         this.palette = new Palette();
+
+        for (int i = 0; i < width * height; i++) {
+            this.cachedSections.add(new byte[0]);
+        }
 
 //        mapCanvasSections.forEach(mapCanvasSection -> {
 //            MapView mapView = Bukkit.getServer().getMap(mapCanvasSection.getMapID());
@@ -106,10 +111,7 @@ public class MapCanvas {
 
         Arrays.fill(this.pixels, MapPalette.matchColor(Color.WHITE));
 
-        mapObjects.forEach(mapObject -> {
-//            System.out.println("Rendering " + mapObject);
-            mapObject.draw(this);
-        });
+        mapObjects.forEach(mapObject -> mapObject.draw(this));
 
         updateMaps();
     }
@@ -118,6 +120,7 @@ public class MapCanvas {
         int mapID = 0;
 
         for (int imageY = 0; imageY < height; imageY++) {
+            inner:
             for (int imageX = 0; imageX < width; imageX++) {
                 byte[] colors = getSubImage(pixels, imageX, imageY);
 
@@ -125,11 +128,15 @@ public class MapCanvas {
                     if (colors[i] == -1) colors[i] = 0;
                 }
 
-                PacketPlayOutMap packet = new PacketPlayOutMap(this.mapCanvasSections.get(mapID).getMapID(), (byte) 4, false, new ArrayList<>(), colors, 0, 0, 128, 128);
+                if (!Arrays.equals(cachedSections.get(mapID), colors)) {
+                    cachedSections.set(mapID, colors);
 
-                List<UUID> finalViewers = this.viewers == null ? Bukkit.getOnlinePlayers().stream().map(Player::getUniqueId).collect(Collectors.toList()) : this.viewers;
+                    PacketPlayOutMap packet = new PacketPlayOutMap(this.mapCanvasSections.get(mapID).getMapID(), (byte) 4, false, new ArrayList<>(), colors, 0, 0, 128, 128);
 
-                finalViewers.stream().map(Bukkit::getPlayer).filter(Objects::nonNull).forEach(player -> ((CraftPlayer) player).getHandle().playerConnection.networkManager.sendPacket(packet));
+                    List<UUID> finalViewers = this.viewers == null ? Bukkit.getOnlinePlayers().stream().map(Player::getUniqueId).collect(Collectors.toList()) : this.viewers;
+
+                    finalViewers.stream().map(Bukkit::getPlayer).filter(Objects::nonNull).forEach(player -> ((CraftPlayer) player).getHandle().playerConnection.networkManager.sendPacket(packet));
+                }
 
                 mapID++;
             }
@@ -137,7 +144,6 @@ public class MapCanvas {
     }
 
     private byte[] getSubImage(byte[] image, int xPos, int yPos) {
-//        System.out.println("(" + xPos + ", " + yPos + ")");
         byte[] sub = getSquare(image, xPos, yPos, 128);
 
         sub = rotateCube270(sub, 128, 128);
