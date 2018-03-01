@@ -1,13 +1,11 @@
 package com.uddernetworks.videoplayer.api;
 
-import com.uddernetworks.videoplayer.api.MapObject;
 import com.uddernetworks.videoplayer.main.VideoPlayer;
 import net.minecraft.server.v1_12_R1.PacketPlayOutMap;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_12_R1.map.CraftMapCanvas;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.map.MapPalette;
@@ -19,10 +17,8 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 public class MapCanvas {
@@ -38,35 +34,36 @@ public class MapCanvas {
     private List<byte[]> cachedSections = new ArrayList<>();
     public byte[] pixels;
     private Palette palette;
+    private UUID uuid;
 
-//    public MapCanvas(int width, int height, List<Integer> mapIDs, List<UUID> viewers) {
-//        this(width, height, mapIDs);
-//        this.viewers = viewers;
-//    }
+    public MapCanvas(VideoPlayer videoPlayer, MapCanvasManager mapCanvasManager, int width, int height, List<Integer> mapIDs) {
+        this(videoPlayer, mapCanvasManager, width, height, mapIDs, new ArrayList<>());
+    }
 
-    public MapCanvas(VideoPlayer videoPlayer, int width, int height, List<Integer> mapIDs) {
+    public MapCanvas(VideoPlayer videoPlayer, MapCanvasManager mapCanvasManager, int width, int height, List<Integer> mapIDs, List<UUID> viewers) {
         this.videoPlayer = videoPlayer;
         this.width = width;
         this.height = height;
         this.mapIDs = mapIDs;
         this.mapObjects = new ArrayList<>();
-//        this.viewers = viewers;
-        this.pixels = new byte[width * height * 128 * 128];
+//        this.pixels = new byte[width * height * 128 * 128];
         this.palette = new Palette();
+        this.viewers = viewers;
+        this.uuid = UUID.randomUUID();
+
+        mapCanvasManager.addCanvas(this);
 
         for (int i = 0; i < width * height; i++) {
             this.cachedSections.add(new byte[0]);
         }
-
-//        mapCanvasSections.forEach(mapCanvasSection -> {
-//            MapView mapView = Bukkit.getServer().getMap(mapCanvasSection.getMapID());
-//            List<MapRenderer> removing = new ArrayList<>(mapView.getRenderers());
-//            removing.forEach(mapView::removeRenderer);
-//        });
     }
 
     public void addObject(MapObject mapObject) {
         this.mapObjects.add(mapObject);
+
+        if (this.pixels == null || this.pixels.length == 0) {
+            mapObject.initialize(this);
+        }
     }
 
     public void setRepaintInterval(int repaintInterval) {
@@ -74,7 +71,6 @@ public class MapCanvas {
     }
 
     public void initialize() {
-
         List<ItemFrame> itemFrames = Bukkit.getWorld("world").getEntities().stream().filter(ItemFrame.class::isInstance).map(ItemFrame.class::cast).filter(itemFrame -> itemFrame.getItem().getType() == Material.MAP).collect(Collectors.toList());
 
         int index = 0;
@@ -98,8 +94,6 @@ public class MapCanvas {
             }
         }
 
-        System.out.println("mapCanvasSections = " + mapCanvasSections);
-
         mapObjects.forEach(mapObject -> {
             System.out.println("Initializing " + mapObject);
             mapObject.initialize(this);
@@ -120,7 +114,6 @@ public class MapCanvas {
         int mapID = 0;
 
         for (int imageY = 0; imageY < height; imageY++) {
-            inner:
             for (int imageX = 0; imageX < width; imageX++) {
                 byte[] colors = getSubImage(pixels, imageX, imageY);
 
@@ -133,7 +126,7 @@ public class MapCanvas {
 
                     PacketPlayOutMap packet = new PacketPlayOutMap(this.mapCanvasSections.get(mapID).getMapID(), (byte) 4, false, new ArrayList<>(), colors, 0, 0, 128, 128);
 
-                    List<UUID> finalViewers = this.viewers == null ? Bukkit.getOnlinePlayers().stream().map(Player::getUniqueId).collect(Collectors.toList()) : this.viewers;
+                    List<UUID> finalViewers = this.viewers == null || this.viewers.isEmpty() ? Bukkit.getOnlinePlayers().stream().map(Player::getUniqueId).collect(Collectors.toList()) : this.viewers;
 
                     finalViewers.stream().map(Bukkit::getPlayer).filter(Objects::nonNull).forEach(player -> ((CraftPlayer) player).getHandle().playerConnection.networkManager.sendPacket(packet));
                 }
@@ -242,5 +235,17 @@ public class MapCanvas {
 
     public List<MapCanvasSection> getMapCanvasSections() {
         return mapCanvasSections;
+    }
+
+    public List<UUID> getViewers() {
+        return viewers;
+    }
+
+    public void removeViewer(UUID uuid) {
+        this.viewers.remove(uuid);
+    }
+
+    public UUID getUUID() {
+        return uuid;
     }
 }

@@ -1,16 +1,16 @@
 package com.uddernetworks.videoplayer.main;
 
 import com.uddernetworks.videoplayer.api.MapCanvas;
-import com.uddernetworks.videoplayer.api.MapCanvasSection;
+import com.uddernetworks.videoplayer.api.MapCanvasManager;
+import com.uddernetworks.videoplayer.api.MapInteractManager;
 import com.uddernetworks.videoplayer.api.Palette;
+import com.uddernetworks.videoplayer.api.event.ClickMapEvent;
 import com.uddernetworks.videoplayer.api.objects.Circle;
 import com.uddernetworks.videoplayer.api.objects.Image;
 import com.uddernetworks.videoplayer.api.objects.Line;
 import com.uddernetworks.videoplayer.api.objects.Rectangle;
-import net.minecraft.server.v1_12_R1.PlayerInteractManager;
 import net.minecraft.server.v1_12_R1.WorldMap;
 import org.bukkit.*;
-import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.EntityType;
@@ -18,53 +18,36 @@ import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerInteractAtEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.server.MapInitializeEvent;
-import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.map.MapPalette;
-import org.bukkit.map.MapView;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.NumberConversions;
-import org.bukkit.util.Vector;
-import org.fusesource.jansi.Ansi;
 
-import java.awt.*;
 import java.awt.Color;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class VideoPlayer extends JavaPlugin implements Listener {
 
     private Palette palette;
-    private int index = 0;
-    private List<List<Integer>> mapIDs = new ArrayList<>();
-
-    @Override
-    public void onEnable() {
-        this.palette = new Palette();
-
-        Bukkit.getServer().getPluginManager().registerEvents(this, this);
-    }
-
-    private double rotation = 0;
 
     private int startingMapID = 52;
     private int width = 10;
     private int height = 6;
 
-    private MapCanvas mapCanvas;
-    private List<MapCanvasSection> mapCanvasSections = new ArrayList<>();
+    private MapCanvasManager mapCanvasManager;
+
+    @Override
+    public void onEnable() {
+        this.palette = new Palette();
+
+        this.mapCanvasManager = new MapCanvasManager();
+
+        Bukkit.getServer().getPluginManager().registerEvents(this, this);
+        Bukkit.getServer().getPluginManager().registerEvents(new MapInteractManager(this.mapCanvasManager), this);
+    }
 
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (command.getName().equalsIgnoreCase("canvas")) {
@@ -94,36 +77,19 @@ public class VideoPlayer extends JavaPlugin implements Listener {
 
                 short excessMapIndex = 0;
 
-
                 for (int y = height; y > 0; y--) {
                     for (int x = 0; x < width; x++) {
                         mapLocation.getBlock().setType(Material.WOOL);
 
-                        WorldMap worldMap = new WorldMap("map_" + excessMapIndex);
-
-//                        MapView mapView = Bukkit.createMap(player.getWorld());
-//
-//                        if (excessMapIndex != 0 || (mapView == null || mapView.getId() < 0)) {
-//                            System.out.println("using old map");
-//
-//                            mapView = getServer().getMap(excessMapIndex);
-//                            excessMapIndex++;
-//                        }
-
-//                        if (this.startingMapID == -1) this.startingMapID = mapView.getId();
+                        new WorldMap("map_" + excessMapIndex);
 
                         Location itemFrameLoc = mapLocation.clone().subtract(1, 0, 0);
 
                         itemFrameLoc.getBlock().setType(Material.ITEM_FRAME);
                         ItemFrame frame = (ItemFrame) player.getWorld().spawnEntity(itemFrameLoc, EntityType.ITEM_FRAME);
                         frame.setRotation(Rotation.NONE);
-//                        System.out.println("id = " + mapView.getId());
-//                        frame.setItem(new ItemStack(Material.MAP, 1, mapView.getId()));
                         frame.setItem(new ItemStack(Material.MAP, 1, excessMapIndex));
                         frame.setRotation(Rotation.NONE);
-
-//                        MapCanvasSection mapCanvasSection = new MapCanvasSection(mapLocation, frame, excessMapIndex, x, y);
-//                        this.mapCanvasSections.add(mapCanvasSection);
 
                         excessMapIndex++;
 
@@ -158,7 +124,7 @@ public class VideoPlayer extends JavaPlugin implements Listener {
                     mapIDs.add(startingMapID + i);
                 }
 
-                mapCanvas = new MapCanvas(this, width, height, mapIDs);
+                MapCanvas mapCanvas = new MapCanvas(this, mapCanvasManager, width, height, mapIDs);
 
                 for (int i = 0; i < 10; i++) {
                     mapCanvas.addObject(new Rectangle(
@@ -210,150 +176,25 @@ public class VideoPlayer extends JavaPlugin implements Listener {
                 mapCanvas.paint();
 
 
-                player.sendMessage(ChatColor.GOLD + "Finished drawing.");
-            } else if (args[0].equalsIgnoreCase("register")) {
-//                int x = Integer.parseInt(args[1]);
-//                int y = Integer.parseInt(args[2]);
-//                int z = Integer.parseInt(args[3]);
-
-                Location edgeLocation = new Location(player.getWorld(), 76.9, 91, 307);
-
-                // Add Z 1 total
-
-                for (int i = 0; i < 128; i++) {
-                    clicks.add(edgeLocation.clone());
-                    edgeLocation.add(0, 0, 0.0078125D);
-                }
-
-
+                player.sendMessage(ChatColor.GOLD + "Finished drawing on the map: " + mapCanvas.getUUID());
             }
         }
 
         return true;
     }
 
-    private List<Location> clicks = new ArrayList<>();
-
     @EventHandler
-    public void onChatEvent(AsyncPlayerChatEvent event) {
-        if (event.getMessage().toLowerCase().startsWith("start")) {
+    public void onClickMapEvent(ClickMapEvent event) {
+        MapCanvas mapCanvas = event.getMapCanvas();
 
-            int after = Integer.valueOf(event.getMessage().replace("start", "").trim());
+        event.getPlayer().sendMessage("Clicked at (" + event.getX() + ", " + event.getY() + ") on map: " + mapCanvas.getUUID());
 
+        Circle circle = new Circle(event.getX(), event.getY(), 50, 70, MapPalette.matchColor(Color.RED));
 
-        }
+        mapCanvas.addObject(circle);
+
+        circle.draw(mapCanvas);
+
+        mapCanvas.updateMaps();
     }
-
-
-    private Vector vector;
-//    private List<Integer[]> itemFrameBlocks = new ArrayList<>();
-
-    @EventHandler
-    public void playerInteractEvent(PlayerInteractEvent event) {
-        Player player = event.getPlayer();
-
-        System.out.println(event.getAction());
-
-        player.sendMessage(ChatColor.GOLD + "Clicked");
-
-        if (event.getHand() != EquipmentSlot.HAND) return;
-
-//        if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            player.sendMessage(ChatColor.GOLD + "Starting shit...");
-            this.vector = player.getLocation().getDirection().normalize();
-
-//            Location target = new Location(player.getWorld(), 77, 91, 307);
-
-            new Thread(() -> {
-//                Vector adding = vector.clone().divide(new Vector(128, 128, 128));
-                Vector adding = vector.clone();
-
-                for (int i = 0; i < 10000; i++) {
-                    vector.add(adding);
-
-                    double posX = vector.getX() + player.getEyeLocation().getX();
-                    double posY = vector.getY() + player.getEyeLocation().getY();
-                    double posZ = vector.getZ() + player.getEyeLocation().getZ();
-
-                    Block currentBlock = player.getWorld().getBlockAt((int) posX, (int) posY, (int) posZ);
-
-                    if (currentBlock.getType() != Material.AIR) {
-                        MapCanvasSection mapCanvasSection = getItemFrameBlock(this.mapCanvas, currentBlock.getX(), currentBlock.getY(), currentBlock.getZ());
-
-                        if (mapCanvasSection == null) {
-                            player.sendMessage(ChatColor.RED + "Nulllll!");
-                            return;
-                        }
-
-                        double columnClicked = (roundToSixteenth(vector.getZ() + player.getEyeLocation().getZ()) - currentBlock.getZ()) * 128D;
-                        double rowClicked = (roundToSixteenth(vector.getY() + player.getEyeLocation().getY()) - currentBlock.getY()) * 128D;
-
-                        columnClicked += (mapCanvasSection.getRelativeX() - 1) * 128;
-                        rowClicked += (mapCanvasSection.getRelativeY() - 1) * 128;
-
-                        System.out.println("Think it was: (" + columnClicked + ", " + rowClicked + ")");
-                        player.sendMessage("Think it was: (" + columnClicked + ", " + rowClicked + ")");
-                        player.sendMessage(ChatColor.GOLD + "Relative: (" + mapCanvasSection.getRelativeX() + ", " + mapCanvasSection.getRelativeY() + ")");
-
-
-                        Circle circle = new Circle((int) columnClicked, (int) rowClicked, 30, 50, MapPalette.matchColor(Color.RED));
-
-                        this.mapCanvas.addObject(circle);
-                        circle.initialize(this.mapCanvas);
-                        circle.draw(this.mapCanvas);
-
-                        this.mapCanvas.updateMaps();
-
-                        break;
-                    }
-                }
-
-                player.sendMessage(ChatColor.GOLD + "Done");
-            }).start();
-//        }
-    }
-
-    private MapCanvasSection getItemFrameBlock(MapCanvas mapCanvas, int x, int y, int z) {
-//        System.out.println("mapCanvas = [" + mapCanvas + "], x = [" + x + "], y = [" + y + "], z = [" + z + "]");
-//        System.out.println(mapCanvas.getMapCanvasSections());
-        return mapCanvas.getMapCanvasSections().stream().filter(mapCanvasSection -> mapCanvasSection.getLocation().getX() == x && mapCanvasSection.getLocation().getY() == y && mapCanvasSection.getLocation().getZ() == z).findFirst().orElse(null);
-    }
-
-    public static double roundToSixteenth(double d) {
-        return Math.round(d * 128) / 128.0;
-    }
-
-    private Vector adding = new Vector(0.1, 0.1, 0.1);
-
-    private void moveForward(Vector vector) {
-        vector.add(vector.normalize().multiply(2));
-    }
-
-    @EventHandler
-    public void onClickEntity(PlayerInteractAtEntityEvent event) {
-        if (!(event.getRightClicked() instanceof ItemFrame)) return;
-
-        ItemFrame itemFrame = (ItemFrame) event.getRightClicked();
-
-        itemFrame.setRotation(Rotation.NONE);
-
-        Bukkit.getPlayer("RubbaBoy").sendMessage(String.valueOf(event.getClickedPosition().getY()));
-
-//        System.out.println(event.getClickedPosition());
-
-//        MapView map = getServer().createMap(event.getPlayer().getWorld());
-//
-//        Bukkit.getPlayer("RubbaBoy").sendMessage("#" + i + " - " + map.getId());
-//
-//        i++;
-//
-//        itemFrame.setItem(new ItemStack(Material.MAP, 1, map.getId()));
-    }
-
-    @EventHandler
-    public void onMapLoad(MapInitializeEvent event) {
-        Bukkit.getPlayer("RubbaBoy").sendMessage("Map " + event.getMap().getId() + " os trying to load");
-    }
-
-
 }
