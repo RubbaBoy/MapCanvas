@@ -1,5 +1,8 @@
 package com.uddernetworks.videoplayer.api;
 
+import com.uddernetworks.videoplayer.api.objects.Clickable;
+import com.uddernetworks.videoplayer.api.objects.MapObject;
+import com.uddernetworks.videoplayer.api.objects.ObjectBounds;
 import com.uddernetworks.videoplayer.main.VideoPlayer;
 import net.minecraft.server.v1_12_R1.PacketPlayOutMap;
 import org.bukkit.Bukkit;
@@ -143,7 +146,6 @@ public class MapCanvas {
         return sub;
     }
 
-
     public void visualizeBytes(byte[] bytes, int width, int height, String name) {
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
@@ -174,6 +176,10 @@ public class MapCanvas {
         }
 
         return sub;
+    }
+
+    public List<Clickable> getClickableInPosition(int x, int y) {
+        return this.mapObjects.stream().filter(Clickable.class::isInstance).map(Clickable.class::cast).filter(objectBounds -> objectBounds.getBounds().positionIsIn(x, y)).collect(Collectors.toList());
     }
 
     public int migrateX(int x) {

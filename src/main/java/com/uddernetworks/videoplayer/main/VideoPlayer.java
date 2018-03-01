@@ -127,33 +127,12 @@ public class VideoPlayer extends JavaPlugin implements Listener {
 
                 MapCanvas mapCanvas = new MapCanvas(this, mapCanvasManager, width, height, mapIDs);
 
-                for (int i = 0; i < 10; i++) {
-                    mapCanvas.addObject(new Rectangle(
-                            ThreadLocalRandom.current().nextInt(128 * width),
-                            ThreadLocalRandom.current().nextInt(128 * height),
-                            ThreadLocalRandom.current().nextInt(128 * width / 2),
-                            ThreadLocalRandom.current().nextInt(128 * height / 2),
-                            palette.getColorById(ThreadLocalRandom.current().nextInt(50))));
-                }
+                Rectangle rectangle = new Rectangle(256, 0, 1024, 1024, MapPalette.matchColor(Color.GREEN));
+                rectangle.setClick((clickingPlayer, action, mapCanvasSection, x, y) -> {
+                    clickingPlayer.sendMessage(ChatColor.GREEN + "You clicked the green rectangle, action = " + action + "specifically at (" + x + ", " + y + ")");
+                });
 
-                for (int i = 0; i < 10; i++) {
-                    mapCanvas.addObject(new Line(
-                            ThreadLocalRandom.current().nextInt(128 * width / 2),
-                            ThreadLocalRandom.current().nextInt(128 * height / 2),
-                            ThreadLocalRandom.current().nextInt(128 * width),
-                            ThreadLocalRandom.current().nextInt(128 * height),
-                            palette.getColorById(ThreadLocalRandom.current().nextInt(50))));
-                }
-
-                for (int i = 0; i < 10; i++) {
-                    int inner = ThreadLocalRandom.current().nextInt(64);
-                    mapCanvas.addObject(new Circle(
-                            ThreadLocalRandom.current().nextInt(128 * width),
-                            ThreadLocalRandom.current().nextInt(128 * height),
-                            inner,
-                            inner + ThreadLocalRandom.current().nextInt(5),
-                            palette.getColorById(ThreadLocalRandom.current().nextInt(50))));
-                }
+                mapCanvas.addObject(rectangle);
 
                 mapCanvas.addObject(new Circle(0, 0, 10, 15, MapPalette.matchColor(Color.RED))); // Top left
                 mapCanvas.addObject(new Circle(width * 128, 0, 10, 15, MapPalette.matchColor(Color.GREEN))); // Top right
@@ -163,12 +142,10 @@ public class VideoPlayer extends JavaPlugin implements Listener {
                 int imageWidth = 600;
                 int imageHeight = 600;
 
-                Image image = null;
-                try {
-                    image = new Image(new URL("https://rubbaboy.me/images/bo9eebg.png"), (width * 128 - imageWidth) / 2, (height * 128 - imageHeight) / 2, imageWidth, imageHeight);
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
-                }
+                Image image = new Image("https://rubbaboy.me/images/bo9eebg.png", (width * 128 - imageWidth) / 2, (height * 128 - imageHeight) / 2, imageWidth, imageHeight);
+                image.setClick((clickingPlayer, action, mapCanvasSection, x, y) -> {
+                    clickingPlayer.sendMessage(ChatColor.BLUE + "Clicked image, action = " + action + " specifically at (" + x + ", " + y + ")");
+                });
 
                 mapCanvas.addObject(image);
 

@@ -1,7 +1,6 @@
 package com.uddernetworks.videoplayer.api.objects;
 
 import com.uddernetworks.videoplayer.api.MapCanvas;
-import com.uddernetworks.videoplayer.api.MapObject;
 import org.bukkit.map.MapPalette;
 
 import javax.imageio.ImageIO;
@@ -12,7 +11,7 @@ import java.net.URL;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class Image implements MapObject {
+public class Image extends Clickable implements MapObject {
 
     private MapCanvas mapCanvas;
     private AtomicReference<BufferedImage> bufferedImage = new AtomicReference<>();
@@ -20,20 +19,21 @@ public class Image implements MapObject {
     private int y;
     private int width;
     private int height;
+    private ObjectBounds objectBounds;
     private AtomicBoolean imageLoaded = new AtomicBoolean(false);
     private AtomicBoolean tryingToDraw = new AtomicBoolean(false);
 
-    public Image(URL url, int x, int y, int width, int height) {
+    public Image(String url, int x, int y, int width, int height) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
-
+        this.objectBounds = new ObjectBounds(x, y, x + width, y + height);
 
         new Thread(() -> {
             try {
                 System.out.println("GEtting image");
-                this.bufferedImage.set(resizeImage(ImageIO.read(url), width, height));
+                this.bufferedImage.set(resizeImage(ImageIO.read(new URL(url)), width, height));
                 System.out.println("Donbe");
                 this.imageLoaded.set(true);
 
@@ -78,6 +78,11 @@ public class Image implements MapObject {
                 }
             }
         }
+    }
+
+    @Override
+    public ObjectBounds getBounds() {
+        return objectBounds;
     }
 
     private BufferedImage resizeImage(BufferedImage image, int width, int height) {

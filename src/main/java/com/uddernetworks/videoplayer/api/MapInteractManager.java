@@ -2,7 +2,7 @@ package com.uddernetworks.videoplayer.api;
 
 import com.uddernetworks.videoplayer.api.event.ClickMapAction;
 import com.uddernetworks.videoplayer.api.event.ClickMapEvent;
-import com.uddernetworks.videoplayer.api.objects.Circle;
+import com.uddernetworks.videoplayer.api.objects.Clickable;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -13,17 +13,14 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.map.MapPalette;
 import org.bukkit.util.Vector;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MapInteractManager implements Listener {
-
 
     private MapCanvasManager mapCanvasManager;
     private ExecutorService executor;
@@ -63,21 +60,10 @@ public class MapInteractManager implements Listener {
                 if (currentBlock.getType() != Material.AIR) {
                     MapCanvasSection mapCanvasSection = getItemFrameBlock(this.mapCanvasManager.getViewedBy(player.getUniqueId()), currentBlock.getX(), currentBlock.getY(), currentBlock.getZ());
 
-                    if (mapCanvasSection == null) {
-//                        player.sendMessage(ChatColor.RED + "Nulllll!");
-                        break;
-                    }
+                    if (mapCanvasSection == null) break;
 
-                    double columnClicked = (roundToSixteenth(vector.getZ() + player.getEyeLocation().getZ()) - currentBlock.getZ()) * 128D;
-                    double rowClicked = (roundToSixteenth(vector.getY() + player.getEyeLocation().getY()) - currentBlock.getY()) * 128D;
-
-                    columnClicked += (mapCanvasSection.getRelativeX() - 1) * 128;
-                    rowClicked += (mapCanvasSection.getRelativeY() - 1) * 128;
-
-//                    System.out.println("Think it was: (" + columnClicked + ", " + rowClicked + ")");
-//                    player.sendMessage("Think it was: (" + columnClicked + ", " + rowClicked + ")");
-//                    player.sendMessage(ChatColor.GOLD + "Relative: (" + mapCanvasSection.getRelativeX() + ", " + mapCanvasSection.getRelativeY() + ")");
-
+                    final double columnClicked = (roundToSixteenth(vector.getZ() + player.getEyeLocation().getZ()) - currentBlock.getZ()) * 128D + ((mapCanvasSection.getRelativeX() - 1) * 128);
+                    final double rowClicked = (roundToSixteenth(vector.getY() + player.getEyeLocation().getY()) - currentBlock.getY()) * 128D + ((mapCanvasSection.getRelativeY() - 1) * 128);
 
                     ClickMapAction clickMapAction = getActionFrom(event.getAction());
 
@@ -85,6 +71,12 @@ public class MapInteractManager implements Listener {
 
                     ClickMapEvent clickMapEvent = new ClickMapEvent(mapCanvasSection.getMapCanvas(), player, clickMapAction, mapCanvasSection, (int) columnClicked, (int) rowClicked);
                     Bukkit.getPluginManager().callEvent(clickMapEvent);
+
+                    if (!clickMapEvent.isCancelled()) {
+                        List<Clickable> objects = mapCanvasSection.getMapCanvas().getClickableInPosition((int) columnClicked, (int) rowClicked);
+
+                        objects.stream().filter(clickable -> clickable.getClick() != null).forEach(clickable -> clickable.getClick().onClick(player, clickMapAction, mapCanvasSection, (int) columnClicked, (int) rowClicked));
+                    }
 
                     break;
                 }

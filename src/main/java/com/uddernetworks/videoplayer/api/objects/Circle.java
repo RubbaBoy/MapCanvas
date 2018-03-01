@@ -1,15 +1,14 @@
 package com.uddernetworks.videoplayer.api.objects;
 
 import com.uddernetworks.videoplayer.api.MapCanvas;
-import com.uddernetworks.videoplayer.api.MapObject;
 
-public class Circle implements MapObject {
-
+public class Circle extends Clickable implements MapObject {
     private int x;
     private int y;
     private int innerRadius;
     private int outerRadius;
     private byte fillColor;
+    private ObjectBounds objectBounds;
 
     public Circle(int x, int y, int radius, byte fillColor) {
         this(x, y, radius, radius, fillColor);
@@ -21,6 +20,7 @@ public class Circle implements MapObject {
         this.innerRadius = innerRadius;
         this.outerRadius = outerRadius;
         this.fillColor = fillColor;
+        this.objectBounds = new ObjectBounds(x - outerRadius, y - outerRadius, x + outerRadius, y + outerRadius);
     }
 
     @Override
@@ -67,7 +67,11 @@ public class Circle implements MapObject {
                 }
             }
         }
-        
+    }
+
+    @Override
+    public ObjectBounds getBounds() {
+        return this.objectBounds;
     }
 
     private void xLine(MapCanvas mapCanvas, int x1, int x2, int y, byte fillColor) {

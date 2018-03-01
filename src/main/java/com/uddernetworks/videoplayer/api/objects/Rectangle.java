@@ -1,14 +1,14 @@
 package com.uddernetworks.videoplayer.api.objects;
 
 import com.uddernetworks.videoplayer.api.MapCanvas;
-import com.uddernetworks.videoplayer.api.MapObject;
 
-public class Rectangle implements MapObject {
+public class Rectangle extends Clickable implements MapObject {
 
     private int x;
     private int y;
     private int width;
     private int height;
+    private ObjectBounds objectBounds;
 
     private byte lineColor;
     private byte fillColor;
@@ -24,12 +24,13 @@ public class Rectangle implements MapObject {
         this.height = height;
         this.lineColor = lineColor;
         this.fillColor = fillColor;
+        this.objectBounds = new ObjectBounds(x, y, x + width, y + height);
     }
 
     @Override
     public void initialize(MapCanvas mapCanvas) {
         this.x = mapCanvas.migrateX(this.x);
-        this.y = mapCanvas.migrateY(this.y);
+        this.y = mapCanvas.migrateY(this.y + this.height);
     }
 
     @Override
@@ -46,5 +47,10 @@ public class Rectangle implements MapObject {
                 }
             }
         }
+    }
+
+    @Override
+    public ObjectBounds getBounds() {
+        return this.objectBounds;
     }
 }

@@ -1,19 +1,18 @@
 package com.uddernetworks.videoplayer.api.objects;
 
 import com.uddernetworks.videoplayer.api.MapCanvas;
-import com.uddernetworks.videoplayer.api.MapObject;
-import org.bukkit.Bukkit;
 import org.bukkit.map.MapFont;
 
 import java.util.logging.Level;
 
-public class Text implements MapObject {
+public class Text extends Clickable implements MapObject {
 
     private int x;
     private int y;
     private MapFont mapFont;
     private String text;
     private byte color;
+    private ObjectBounds objectBounds;
 
     public Text(int x, int y, MapFont mapFont, byte color, String text) {
         this.x = x;
@@ -21,11 +20,12 @@ public class Text implements MapObject {
         this.mapFont = mapFont;
         this.text = text;
         this.color = color;
+        this.objectBounds = new ObjectBounds(x, y, 0, 0);
     }
 
     @Override
     public void initialize(MapCanvas mapCanvas) {
-        mapCanvas.migrateY(this.y + this.mapFont.getHeight());
+        this.y = mapCanvas.migrateY(this.y + this.mapFont.getHeight());
     }
 
     @Override
@@ -72,5 +72,12 @@ public class Text implements MapObject {
                 x += sprite.getWidth() + extra + 1;
             }
         }
+
+        this.objectBounds = new ObjectBounds(this.x, this.y, x, y);
+    }
+
+    @Override
+    public ObjectBounds getBounds() {
+        return objectBounds;
     }
 }

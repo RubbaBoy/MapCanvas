@@ -1,4 +1,6 @@
-package com.uddernetworks.videoplayer.api;
+package com.uddernetworks.videoplayer.api.objects;
+
+import com.uddernetworks.videoplayer.api.MapCanvas;
 
 public interface MapObject {
     void initialize(MapCanvas mapCanvas);
