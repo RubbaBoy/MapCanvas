@@ -4,8 +4,11 @@ import com.uddernetworks.videoplayer.api.MapObject;
 import com.uddernetworks.videoplayer.main.VideoPlayer;
 import net.minecraft.server.v1_12_R1.PacketPlayOutMap;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_12_R1.map.CraftMapCanvas;
+import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.map.MapPalette;
 import org.bukkit.map.MapRenderer;
@@ -27,6 +30,7 @@ public class MapCanvas {
     private VideoPlayer videoPlayer;
     private int width;
     private int height;
+    private List<MapCanvasSection> mapCanvasSections = new ArrayList<>();
     private List<Integer> mapIDs;
     private List<MapObject> mapObjects;
     private List<UUID> viewers;
@@ -49,12 +53,11 @@ public class MapCanvas {
         this.pixels = new byte[width * height * 128 * 128];
         this.palette = new Palette();
 
-        mapIDs.forEach(mapID -> {
-            MapView mapView = Bukkit.getServer().getMap(mapID.shortValue());
-            if (mapView == null) System.out.println("MAP VIEW NULL");
-            List<MapRenderer> removing = new ArrayList<>(mapView.getRenderers());
-            removing.forEach(mapView::removeRenderer);
-        });
+//        mapCanvasSections.forEach(mapCanvasSection -> {
+//            MapView mapView = Bukkit.getServer().getMap(mapCanvasSection.getMapID());
+//            List<MapRenderer> removing = new ArrayList<>(mapView.getRenderers());
+//            removing.forEach(mapView::removeRenderer);
+//        });
     }
 
     public void addObject(MapObject mapObject) {
@@ -66,14 +69,36 @@ public class MapCanvas {
     }
 
     public void initialize() {
+
+        List<ItemFrame> itemFrames = Bukkit.getWorld("world").getEntities().stream().filter(ItemFrame.class::isInstance).map(ItemFrame.class::cast).filter(itemFrame -> itemFrame.getItem().getType() == Material.MAP).collect(Collectors.toList());
+
+        int index = 0;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                short mapID = this.mapIDs.get(index).shortValue();
+                MapView mapView = Bukkit.getServer().getMap(mapID);
+                List<MapRenderer> removing = new ArrayList<>(mapView.getRenderers());
+                removing.forEach(mapView::removeRenderer);
+
+                ItemFrame itemFrame = itemFrames.stream().filter(frame -> frame.getItem().getDurability() == mapID).findFirst().orElse(null);
+
+                if (itemFrame == null) return;
+
+                Location location = itemFrame.getLocation().getBlock().getLocation().clone().add(itemFrame.getAttachedFace().getModX(), itemFrame.getAttachedFace().getModY(), itemFrame.getAttachedFace().getModZ());
+
+                MapCanvasSection mapCanvasSection = new MapCanvasSection(this, location, itemFrame, mapID, x + 1, height - y);
+                this.mapCanvasSections.add(mapCanvasSection);
+                index++;
+            }
+        }
+
+        System.out.println("mapCanvasSections = " + mapCanvasSections);
+
         mapObjects.forEach(mapObject -> {
             System.out.println("Initializing " + mapObject);
             mapObject.initialize(this);
         });
-
-//        this.mapIDs.forEach(mapID -> {
-//            MapView mapView = Bukkit.getServer().getMap(mapID.shortValue());
-//        });
     }
 
     public void paint() {
@@ -82,7 +107,7 @@ public class MapCanvas {
         Arrays.fill(this.pixels, MapPalette.matchColor(Color.WHITE));
 
         mapObjects.forEach(mapObject -> {
-            System.out.println("Rendering " + mapObject);
+//            System.out.println("Rendering " + mapObject);
             mapObject.draw(this);
         });
 
@@ -100,7 +125,7 @@ public class MapCanvas {
                     if (colors[i] == -1) colors[i] = 0;
                 }
 
-                PacketPlayOutMap packet = new PacketPlayOutMap(mapIDs.get(mapID), (byte) 4, false, new ArrayList<>(), colors, 0, 0, 128, 128);
+                PacketPlayOutMap packet = new PacketPlayOutMap(this.mapCanvasSections.get(mapID).getMapID(), (byte) 4, false, new ArrayList<>(), colors, 0, 0, 128, 128);
 
                 List<UUID> finalViewers = this.viewers == null ? Bukkit.getOnlinePlayers().stream().map(Player::getUniqueId).collect(Collectors.toList()) : this.viewers;
 
@@ -112,7 +137,7 @@ public class MapCanvas {
     }
 
     private byte[] getSubImage(byte[] image, int xPos, int yPos) {
-        System.out.println("(" + xPos + ", " + yPos + ")");
+//        System.out.println("(" + xPos + ", " + yPos + ")");
         byte[] sub = getSquare(image, xPos, yPos, 128);
 
         sub = rotateCube270(sub, 128, 128);
@@ -207,5 +232,9 @@ public class MapCanvas {
 
     public VideoPlayer getVideoPlayer() {
         return videoPlayer;
+    }
+
+    public List<MapCanvasSection> getMapCanvasSections() {
+        return mapCanvasSections;
     }
 }
