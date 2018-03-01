@@ -5,9 +5,9 @@ import com.uddernetworks.videoplayer.api.MapCanvasManager;
 import com.uddernetworks.videoplayer.api.MapInteractManager;
 import com.uddernetworks.videoplayer.api.Palette;
 import com.uddernetworks.videoplayer.api.event.ClickMapEvent;
-import com.uddernetworks.videoplayer.api.objects.Circle;
+import com.uddernetworks.videoplayer.api.font.MinecraftFont;
+import com.uddernetworks.videoplayer.api.objects.*;
 import com.uddernetworks.videoplayer.api.objects.Image;
-import com.uddernetworks.videoplayer.api.objects.Line;
 import com.uddernetworks.videoplayer.api.objects.Rectangle;
 import net.minecraft.server.v1_12_R1.WorldMap;
 import org.bukkit.*;
@@ -95,6 +95,7 @@ public class VideoPlayer extends JavaPlugin implements Listener {
 
                         mapLocation.add(0, 0, 1);
                     }
+
                     mapLocation.subtract(0, 1, this.width);
                 }
 
@@ -170,6 +171,8 @@ public class VideoPlayer extends JavaPlugin implements Listener {
                 }
 
                 mapCanvas.addObject(image);
+
+                mapCanvas.addObject(new Text(128, 128, new MinecraftFont(32), MapPalette.matchColor(Color.BLACK), "Hello, World!"));
 
                 mapCanvas.initialize();
 

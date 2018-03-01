@@ -32,7 +32,7 @@ public class MapCanvas {
     private List<UUID> viewers;
     private int repaintInterval = 500; // In MS
     private List<byte[]> cachedSections = new ArrayList<>();
-    public byte[] pixels;
+    private byte[] pixels;
     private Palette palette;
     private UUID uuid;
 
@@ -46,7 +46,6 @@ public class MapCanvas {
         this.height = height;
         this.mapIDs = mapIDs;
         this.mapObjects = new ArrayList<>();
-//        this.pixels = new byte[width * height * 128 * 128];
         this.palette = new Palette();
         this.viewers = viewers;
         this.uuid = UUID.randomUUID();
@@ -61,7 +60,7 @@ public class MapCanvas {
     public void addObject(MapObject mapObject) {
         this.mapObjects.add(mapObject);
 
-        if (this.pixels == null || this.pixels.length == 0) {
+        if (this.pixels != null && this.pixels.length != 0) {
             mapObject.initialize(this);
         }
     }

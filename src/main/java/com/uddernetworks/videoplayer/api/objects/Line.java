@@ -34,9 +34,7 @@ public class Line implements MapObject {
     @Override
     public void draw(MapCanvas mapCanvas) {
         List<int[]> points =  drawLine(x1, y1, x2, y2);
-        points.forEach(cords -> {
-            mapCanvas.setPixel(cords[0], cords[1], lineColor);
-        });
+        points.forEach(cords -> mapCanvas.setPixel(cords[0], cords[1], lineColor));
     }
 
     private List<int[]> drawLine(int x, int y, int x2, int y2) {
