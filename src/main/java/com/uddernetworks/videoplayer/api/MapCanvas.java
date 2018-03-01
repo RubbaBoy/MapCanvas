@@ -33,7 +33,6 @@ public class MapCanvas {
     private List<Integer> mapIDs;
     private List<MapObject> mapObjects;
     private List<UUID> viewers;
-    private int repaintInterval = 500; // In MS
     private List<byte[]> cachedSections = new ArrayList<>();
     private byte[] pixels;
     private Palette palette;
@@ -66,10 +65,6 @@ public class MapCanvas {
         if (this.pixels != null && this.pixels.length != 0) {
             mapObject.initialize(this);
         }
-    }
-
-    public void setRepaintInterval(int repaintInterval) {
-        this.repaintInterval = repaintInterval;
     }
 
     public void initialize() {
@@ -228,10 +223,6 @@ public class MapCanvas {
 
     public int getHeight() {
         return height;
-    }
-
-    public int getRepaintInterval() {
-        return repaintInterval;
     }
 
     public VideoPlayer getVideoPlayer() {

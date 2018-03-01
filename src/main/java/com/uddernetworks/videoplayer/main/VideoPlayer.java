@@ -23,11 +23,8 @@ import org.bukkit.map.MapPalette;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.awt.Color;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class VideoPlayer extends JavaPlugin implements Listener {
 
@@ -150,6 +147,12 @@ public class VideoPlayer extends JavaPlugin implements Listener {
                 mapCanvas.addObject(image);
 
                 mapCanvas.addObject(new Text(128, 128, new MinecraftFont(32), MapPalette.matchColor(Color.BLACK), "Hello, World!"));
+
+
+
+                mapCanvas.addObject(new ItemRender(this, Material.STONE, 512, 512 + 500, 256, 256));
+                mapCanvas.addObject(new ItemRender(this, Material.DIAMOND_SWORD, 1000, 1500, 512, 512));
+                mapCanvas.addObject(new ItemRender(this, Material.GOLD_INGOT, 500, 1500, 128 * 3, 128 * 3));
 
                 mapCanvas.initialize();
 

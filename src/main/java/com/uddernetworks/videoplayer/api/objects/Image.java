@@ -6,13 +6,13 @@ import org.bukkit.map.MapPalette;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class Image extends Clickable implements MapObject {
-
     private MapCanvas mapCanvas;
     private AtomicReference<BufferedImage> bufferedImage = new AtomicReference<>();
     private int x;
@@ -23,18 +23,46 @@ public class Image extends Clickable implements MapObject {
     private AtomicBoolean imageLoaded = new AtomicBoolean(false);
     private AtomicBoolean tryingToDraw = new AtomicBoolean(false);
 
+    public Image(File file, int x, int y, int width, int height) {
+        this(x, y, width, height);
+
+        setImage(file);
+    }
+
     public Image(String url, int x, int y, int width, int height) {
+        this(x, y, width, height);
+
+        setImage(url);
+    }
+
+    Image(int x, int y, int width, int height) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
         this.objectBounds = new ObjectBounds(x, y, x + width, y + height);
+    }
 
+    void setImage(File file) {
         new Thread(() -> {
             try {
-                System.out.println("GEtting image");
+                this.bufferedImage.set(resizeImage(ImageIO.read(file), width, height));
+                this.imageLoaded.set(true);
+
+                if (this.tryingToDraw.get()) {
+                    this.draw(mapCanvas);
+                    mapCanvas.updateMaps();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    void setImage(String url) {
+        new Thread(() -> {
+            try {
                 this.bufferedImage.set(resizeImage(ImageIO.read(new URL(url)), width, height));
-                System.out.println("Donbe");
                 this.imageLoaded.set(true);
 
                 if (this.tryingToDraw.get()) {
