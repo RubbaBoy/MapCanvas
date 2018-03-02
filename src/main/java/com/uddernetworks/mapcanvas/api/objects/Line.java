@@ -1,10 +1,13 @@
-package com.uddernetworks.videoplayer.api.objects;
+package com.uddernetworks.mapcanvas.api.objects;
 
-import com.uddernetworks.videoplayer.api.MapCanvas;
+import com.uddernetworks.mapcanvas.api.MapCanvas;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Makes a line from two points with a specified color.
+ */
 public class Line implements MapObject {
 
     private int x1;
@@ -13,6 +16,14 @@ public class Line implements MapObject {
     private int y2;
     private byte lineColor;
 
+    /**
+     * Creates a line from one set of coordinates to another set of coordinates.
+     * @param x1 The X value for the first coordinate
+     * @param y1 The Y value for the first coordinate
+     * @param x2 The X value for the second coordinate
+     * @param y2 The Y value for the second coordinate
+     * @param lineColor The byte color the line should be
+     */
     public Line(int x1, int y1, int x2, int y2, byte lineColor) {
         this.x1 = x1;
         this.y1 = y1;

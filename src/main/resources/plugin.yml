@@ -1,8 +1,5 @@
-main: com.uddernetworks.videoplayer.main.VideoPlayer
-name: VideoPlayer
-version: 1.0
+main: com.uddernetworks.mapcanvas.api.MapCanvasAPI
+name: MapCanvasAPI
+description: An API for MapCanvases
 author: RubbaBoy
-commands:
-  canvas:
-    usage: /canvas
-    description: Canvas command
+version: 1.0

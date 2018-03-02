@@ -1,7 +1,10 @@
-package com.uddernetworks.videoplayer.api.font;
+package com.uddernetworks.mapcanvas.api.font;
 
 import org.bukkit.map.MapFont;
 
+/**
+ * Scalable instance of Bukkit's MinecraftFont class, used for the {@link com.uddernetworks.mapcanvas.api.objects.Text} object.
+ */
 public class MinecraftFont extends MapFont {
     private static final int spaceSize = 2;
     private static final String fontChars = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_'abcdefghijklmnopqrstuvwxyz{|}~\u007fÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜø£Ø×ƑáíóúñÑªº¿®¬½¼¡«»";

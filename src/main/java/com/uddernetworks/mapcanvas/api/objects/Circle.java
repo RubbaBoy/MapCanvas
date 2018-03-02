@@ -1,7 +1,10 @@
-package com.uddernetworks.videoplayer.api.objects;
+package com.uddernetworks.mapcanvas.api.objects;
 
-import com.uddernetworks.videoplayer.api.MapCanvas;
+import com.uddernetworks.mapcanvas.api.MapCanvas;
 
+/**
+ * Makes the shape of a circle.
+ */
 public class Circle extends Clickable implements MapObject {
     private int x;
     private int y;
@@ -10,10 +13,28 @@ public class Circle extends Clickable implements MapObject {
     private byte fillColor;
     private ObjectBounds objectBounds;
 
+    /**
+     * Creates a circle from a single radius, with an outer width of 1.
+     * @param x The center X position on the map canvas where the circle should be drawn
+     * @param y The center Y position on the map canvas where the circle should be drawn
+     * @param radius The radius the drawn circle should be
+     * @param fillColor The byte color the circle should be
+     */
     public Circle(int x, int y, int radius, byte fillColor) {
         this(x, y, radius, radius, fillColor);
     }
 
+    /**
+     * Creates a circle from two radii. The buggest the circle will be is outerRadius, the
+     * smallest inner part of the circle will be is the innerRadius. Pixels will be drawn
+     * in the difference between the two radii, so the difference between the arguments will
+     * be the circle's line thickness.
+     * @param x The center X position on the map canvas where the circle should be drawn
+     * @param y The center Y position on the map canvas where the circle should be drawn
+     * @param innerRadius The inner radius the drawn circle should be
+     * @param outerRadius The outer radius the drawn circle should be
+     * @param fillColor The byte color the circle should be
+     */
     public Circle(int x, int y, int innerRadius, int outerRadius, byte fillColor) {
         this.x = x;
         this.y = y;

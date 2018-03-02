@@ -1,10 +1,13 @@
-package com.uddernetworks.videoplayer.api.objects;
+package com.uddernetworks.mapcanvas.api.objects;
 
-import com.uddernetworks.videoplayer.api.MapCanvas;
+import com.uddernetworks.mapcanvas.api.MapCanvas;
 import org.bukkit.map.MapFont;
 
 import java.util.logging.Level;
 
+/**
+ * Makes text with the given MapFont.
+ */
 public class Text extends Clickable implements MapObject {
 
     private int x;
@@ -14,6 +17,15 @@ public class Text extends Clickable implements MapObject {
     private byte color;
     private ObjectBounds objectBounds;
 
+    /**
+     * Created text that will be drawn at the specified coordinates with the given color
+     * using the given MapFont.
+     * @param x The X position from the bottom left corner of the text where it should be drawn
+     * @param y The Y position from the bottom left corner of the text where it should be drawn
+     * @param mapFont The MapFont to use to render text
+     * @param color The byte color the text should be drawn in
+     * @param text The text that should be drawn to the map canvas
+     */
     public Text(int x, int y, MapFont mapFont, byte color, String text) {
         this.x = x;
         this.y = y;
@@ -36,7 +48,7 @@ public class Text extends Clickable implements MapObject {
         int xStart = x;
 
         if (!this.mapFont.isValid(this.text)) {
-            mapCanvas.getVideoPlayer().getLogger().log(Level.WARNING, "Text contains invalid characters.");
+            mapCanvas.getPlugin().getLogger().log(Level.WARNING, "Text contains invalid characters.");
             return;
         }
 
