@@ -51,7 +51,7 @@ public class Rectangle extends Clickable implements MapObject {
                 if (x == 0 || x == this.width || y == 0 || y == this.height) {
                     if (this.lineColor == -1) {
                         if (this.fillColor != -1) {
-                            mapCanvas.setPixel(imageX, imageY, this.lineColor);
+                            mapCanvas.setPixel(imageX, imageY, this.fillColor);
                         }
                     } else {
                         mapCanvas.setPixel(imageX, imageY, this.lineColor);
@@ -68,5 +68,37 @@ public class Rectangle extends Clickable implements MapObject {
     @Override
     public ObjectBounds getBounds() {
         return this.objectBounds;
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public void setX(int x) {
+        this.x = x;
+    }
+
+    public int getY() {
+        return y;
+    }
+
+    public void setY(int y) {
+        this.y = y;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public void setWidth(int width) {
+        this.width = width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
     }
 }
